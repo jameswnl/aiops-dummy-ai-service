@@ -91,8 +91,8 @@ def scikitlearn(data_frame, num_of_tress, sample_size):
 
 def ai_service_worker(
         job: dict,
-        next_service: str,
-        env: dict,
+        next_service: str = None,
+        env: dict = {},
         b64_identity: str = None,
         ) -> Thread:
     """Outlier detection."""
@@ -121,8 +121,8 @@ def ai_service_worker(
         )
 
         num_trees, sample_size = isolation_forest_params(
-            env['num_trees_factor'],
-            env['sample_size_factor'],
+            float(env.get('num_trees_factor', .2)),
+            float(env.get('sample_size_factor', .2)),
             rows,
         )
 
@@ -144,7 +144,7 @@ def ai_service_worker(
         # Build response JSON
         output = {
             'id': batch_id,
-            'ai_service': env['ai_service'],
+            'ai_service': env.get('ai_service', 'aiops-outlier-detection'),
             'data': {
                 'account_number': account_id,
                 'results': results,
@@ -156,24 +156,25 @@ def ai_service_worker(
         }
 
         LOGGER.info(
-            'Job ID %s: detection done, publishing to %s ...',
+            'Job ID %s: detection done, next_service: %s',
             batch_id, next_service
         )
 
         # Pass to the next service
-        try:
-            _retryable(
-                'post',
-                next_service,
-                json=output,
-                headers={"x-rh-identity": b64_identity}
-            )
-        except requests.HTTPError as exception:
-            LOGGER.error(
-                'Failed to pass data for "%s": %s', batch_id,
-                exception
-            )
-        METRICS['jobs_published'].inc()
+        if next_service:
+            try:
+                _retryable(
+                    'post',
+                    next_service,
+                    json=output,
+                    headers={"x-rh-identity": b64_identity}
+                )
+            except requests.HTTPError as exception:
+                LOGGER.error(
+                    'Failed to pass data for "%s": %s', batch_id,
+                    exception
+                )
+            METRICS['jobs_published'].inc()
         LOGGER.debug('Done, exiting')
 
     thread = Thread(target=worker)
