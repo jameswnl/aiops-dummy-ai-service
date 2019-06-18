@@ -161,7 +161,13 @@ def ai_service_worker(
         )
 
         # Pass to the next service
-        if next_service:
+        if not next_service:
+            print("next service not given. skipped")
+        elif os.path.isdir(next_service)
+            output_file = os.path.join(dest, f'{account_id}_scores.json')
+            with open(output_file, w) as json_file:
+                json.dump(json_file)
+        else:
             try:
                 _retryable(
                     'post',
