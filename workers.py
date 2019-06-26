@@ -119,6 +119,7 @@ def ai_service_worker(
             'Job account ID %s (batch ID: %s): Started...',
             account_id, batch_id
         )
+        print('Job account ID', account_id, ' started...')
 
         num_trees, sample_size = isolation_forest_params(
             float(env.get('num_trees_factor', .2)),
@@ -140,6 +141,7 @@ def ai_service_worker(
         with METRICS['report_time'].time():
             reports = isolation_forest.to_report()
         LOGGER.info('Analysis have %s rows in scores', len(results))
+        print('Analysis done. Rows in scores:', len(results))
 
         # Build response JSON
         output = {
